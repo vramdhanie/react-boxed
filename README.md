@@ -19,7 +19,7 @@ A React-based word puzzle game where players arrange letters to find pairs of wo
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/boxed-react.git
+git clone https://github.com/vramdhanie/boxed-react.git
 cd boxed-react
 ```
 
@@ -58,7 +58,7 @@ This project is configured to automatically deploy to GitHub Pages when changes 
 1. Update the `base` property in `vite.config.ts` with your repository name:
 ```ts
 export default defineConfig({
-  base: '/your-repo-name/',
+  base: '/react-boxed/',
   // ... other config
 });
 ```
@@ -70,7 +70,7 @@ git push origin main
 
 3. The GitHub Action will automatically build and deploy your site to GitHub Pages.
 
-4. Once deployed, your site will be available at `https://yourusername.github.io/your-repo-name/`
+4. Once deployed, your site will be available at `https://vramdhanie.github.io/react-boxed/`
 
 ### Setting up GitHub Pages
 
