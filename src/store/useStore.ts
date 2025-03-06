@@ -1,54 +1,63 @@
 import { create } from "zustand";
 
-interface Position {
+interface Letter {
   key: string;
   position: number;
 }
 
 interface Store {
-  placedLetters: Position[];
+  placedLetters: Letter[];
   usedKeys: string[];
+  draggedKey: string | null;
   setLetter: (key: string, position: number) => void;
   removeLetter: (position: number) => void;
+  setDraggedKey: (key: string | null) => void;
 }
 
 const useStore = create<Store>((set) => ({
   placedLetters: [],
   usedKeys: [],
-  setLetter: (key: string, position: number) => {
+  draggedKey: null,
+  setLetter: (key, position) =>
     set((state) => {
-      // Check if the position is already occupied
-      const isPositionOccupied = state.placedLetters.some(
-        (letter) => letter.position === position
+      // Remove any existing letter at this position
+      const filteredLetters = state.placedLetters.filter(
+        (letter) => letter.position !== position
       );
 
-      // Check if the key is already used
-      const isKeyUsed = state.usedKeys.includes(key);
-
-      if (isPositionOccupied || isKeyUsed) return state;
+      // Add the new letter and ensure unique keys
+      const newUsedKeys = Array.from(new Set([...state.usedKeys, key]));
 
       return {
-        placedLetters: [...state.placedLetters, { key, position }],
-        usedKeys: [...state.usedKeys, key],
+        placedLetters: [...filteredLetters, { key, position }],
+        usedKeys: newUsedKeys,
       };
-    });
-  },
-  removeLetter: (position: number) => {
+    }),
+  removeLetter: (position) =>
     set((state) => {
       const letterToRemove = state.placedLetters.find(
         (letter) => letter.position === position
       );
-
       if (!letterToRemove) return state;
 
+      const key = letterToRemove.key;
+      const filteredLetters = state.placedLetters.filter(
+        (letter) => letter.position !== position
+      );
+
+      // Only remove from usedKeys if this was the last instance of this letter
+      const shouldRemoveFromUsed = !filteredLetters.some(
+        (letter) => letter.key === key
+      );
+
       return {
-        placedLetters: state.placedLetters.filter(
-          (letter) => letter.position !== position
-        ),
-        usedKeys: state.usedKeys.filter((key) => key !== letterToRemove.key),
+        placedLetters: filteredLetters,
+        usedKeys: shouldRemoveFromUsed
+          ? state.usedKeys.filter((k) => k !== key)
+          : state.usedKeys,
       };
-    });
-  },
+    }),
+  setDraggedKey: (key) => set({ draggedKey: key }),
 }));
 
 export default useStore;

@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useDrop } from 'react-dnd';
+import type { DropTargetMonitor } from 'react-dnd';
 import useStore from '../store/useStore';
 import { constructTrie, generateWords, findOptionalSolutions } from '../utils/wordProcessor';
 import { useQuery } from '@tanstack/react-query';
 import type { TrieNode } from '../utils/wordProcessor';
+
+const ItemTypes = {
+  LETTER: 'letter'
+};
 
 const fetchWordList = async () => {
   const response = await fetch('/assets/words_alpha.txt');
@@ -10,61 +16,17 @@ const fetchWordList = async () => {
   return text.split('\n').map(word => word.trim().toUpperCase());
 };
 
+interface DragItem {
+  type: string;
+  key: string;
+}
+
 const Board: React.FC = () => {
   const placedLetters = useStore((state) => state.placedLetters);
   const setLetter = useStore((state) => state.setLetter);
   const removeLetter = useStore((state) => state.removeLetter);
-  const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [solutions, setSolutions] = useState<[string, string][]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch word list and construct trie
-  const { data: trie, isLoading: isLoadingWords, error: wordLoadError } = useQuery<TrieNode>({
-    queryKey: ['wordList'],
-    queryFn: async () => {
-      const words = await fetchWordList();
-      return constructTrie(words);
-    },
-    staleTime: Infinity, // Never mark the data as stale since word list won't change
-    gcTime: Infinity, // Keep in cache forever
-  });
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (target instanceof HTMLElement && target.dataset.key) {
-      setDraggedKey(target.dataset.key);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, position: number) => {
-    e.preventDefault();
-    const key = e.dataTransfer.getData('text/plain');
-    setLetter(key, position);
-    setDraggedKey(null);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>, position: number) => {
-    e.preventDefault();
-    const touch = e.changedTouches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (target instanceof HTMLElement && target.dataset.key) {
-      setLetter(target.dataset.key, position);
-    }
-    setDraggedKey(null);
-  };
-
-  const handleClick = (position: number) => {
-    const letter = getLetterForPosition(position);
-    if (letter) {
-      removeLetter(position);
-    }
-  };
 
   const getLetterForPosition = (position: number) => {
     return placedLetters.find((letter) => letter.position === position)?.key;
@@ -99,6 +61,17 @@ const Board: React.FC = () => {
     setIsLoading(false);
   };
 
+  // Fetch word list and construct trie
+  const { data: trie, isLoading: isLoadingWords, error: wordLoadError } = useQuery<TrieNode>({
+    queryKey: ['wordList'],
+    queryFn: async () => {
+      const words = await fetchWordList();
+      return constructTrie(words);
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
   // Show loading state while word list is being fetched
   if (isLoadingWords) {
     return (
@@ -122,111 +95,73 @@ const Board: React.FC = () => {
     );
   }
 
+  const Cell: React.FC<{ position: number }> = ({ position }) => {
+    const letter = getLetterForPosition(position);
+    const isEmpty = !letter;
+    const cellRef = useRef<HTMLDivElement>(null);
+
+    const [{ isOver, canDrop }, drop] = useDrop({
+      accept: ItemTypes.LETTER,
+      canDrop: () => !getLetterForPosition(position),
+      drop: (item: DragItem) => {
+        setLetter(item.key, position);
+        return { dropped: true };
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop()
+      }),
+      options: {
+        dropEffect: 'move'
+      }
+    });
+
+    useEffect(() => {
+      drop(cellRef.current);
+    }, [drop]);
+
+    return (
+      <div
+        ref={cellRef}
+        onClick={() => letter && removeLetter(position)}
+        className={`w-12 h-12 border-2 rounded-lg 
+                   shadow-sm flex items-center justify-center
+                   transition-all duration-200
+                   touch-none
+                   ${isEmpty && isOver && canDrop
+                     ? 'border-blue-400 bg-blue-50 scale-110 z-10' 
+                     : isEmpty && canDrop
+                     ? 'border-gray-300 bg-gray-50 hover:border-blue-300 hover:bg-blue-50'
+                     : 'border-gray-300 bg-white cursor-pointer hover:bg-gray-50 active:bg-gray-100'}`}
+      >
+        <span className={letter ? 'text-gray-800 font-semibold' : 'text-gray-400'}>
+          {letter || position + 1}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto mt-8">
       <div className="relative w-[240px] h-[240px] mx-auto border-2 border-gray-300 rounded-lg">
         {/* Top row */}
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={`top-${i}`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, i)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={(e) => handleTouchEnd(e, i)}
-              onClick={() => handleClick(i)}
-              data-key={getLetterForPosition(i)}
-              className={`w-12 h-12 border-2 border-gray-300 rounded-lg 
-                       shadow-sm flex items-center justify-center
-                       ${getLetterForPosition(i) 
-                         ? draggedKey === getLetterForPosition(i)
-                           ? 'bg-blue-50 border-blue-300'
-                           : 'bg-white cursor-pointer hover:bg-gray-50 active:bg-gray-100' 
-                         : 'bg-gray-50'}`}
-            >
-              <span className={getLetterForPosition(i) ? 'text-gray-800 font-semibold' : 'text-gray-400'}>
-                {getLetterForPosition(i) || i + 1}
-              </span>
-            </div>
-          ))}
+          {[0, 1, 2].map(i => <Cell key={i} position={i} />)}
         </div>
 
         {/* Right side */}
         <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-          {[3, 4, 5].map((i) => (
-            <div
-              key={`right-${i}`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, i)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={(e) => handleTouchEnd(e, i)}
-              onClick={() => handleClick(i)}
-              data-key={getLetterForPosition(i)}
-              className={`w-12 h-12 border-2 border-gray-300 rounded-lg 
-                       shadow-sm flex items-center justify-center
-                       ${getLetterForPosition(i) 
-                         ? draggedKey === getLetterForPosition(i)
-                           ? 'bg-blue-50 border-blue-300'
-                           : 'bg-white cursor-pointer hover:bg-gray-50 active:bg-gray-100' 
-                         : 'bg-gray-50'}`}
-            >
-              <span className={getLetterForPosition(i) ? 'text-gray-800 font-semibold' : 'text-gray-400'}>
-                {getLetterForPosition(i) || i + 1}
-              </span>
-            </div>
-          ))}
+          {[3, 4, 5].map(i => <Cell key={i} position={i} />)}
         </div>
 
         {/* Bottom row */}
         <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {[6, 7, 8].map((i) => (
-            <div
-              key={`bottom-${i}`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, i)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={(e) => handleTouchEnd(e, i)}
-              onClick={() => handleClick(i)}
-              data-key={getLetterForPosition(i)}
-              className={`w-12 h-12 border-2 border-gray-300 rounded-lg 
-                       shadow-sm flex items-center justify-center
-                       ${getLetterForPosition(i) 
-                         ? draggedKey === getLetterForPosition(i)
-                           ? 'bg-blue-50 border-blue-300'
-                           : 'bg-white cursor-pointer hover:bg-gray-50 active:bg-gray-100' 
-                         : 'bg-gray-50'}`}
-            >
-              <span className={getLetterForPosition(i) ? 'text-gray-800 font-semibold' : 'text-gray-400'}>
-                {getLetterForPosition(i) || i + 1}
-              </span>
-            </div>
-          ))}
+          {[6, 7, 8].map(i => <Cell key={i} position={i} />)}
         </div>
 
         {/* Left side */}
         <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-          {[9, 10, 11].map((i) => (
-            <div
-              key={`left-${i}`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, i)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={(e) => handleTouchEnd(e, i)}
-              onClick={() => handleClick(i)}
-              data-key={getLetterForPosition(i)}
-              className={`w-12 h-12 border-2 border-gray-300 rounded-lg 
-                       shadow-sm flex items-center justify-center
-                       ${getLetterForPosition(i) 
-                         ? draggedKey === getLetterForPosition(i)
-                           ? 'bg-blue-50 border-blue-300'
-                           : 'bg-white cursor-pointer hover:bg-gray-50 active:bg-gray-100' 
-                         : 'bg-gray-50'}`}
-            >
-              <span className={getLetterForPosition(i) ? 'text-gray-800 font-semibold' : 'text-gray-400'}>
-                {getLetterForPosition(i) || i + 1}
-              </span>
-            </div>
-          ))}
+          {[9, 10, 11].map(i => <Cell key={i} position={i} />)}
         </div>
 
         {/* Solve button */}
