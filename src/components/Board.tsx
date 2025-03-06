@@ -52,14 +52,21 @@ const Board: React.FC = () => {
       return;
     }
 
-    // Generate all characters
-    const allChars = strings.join('').split('');
+    try {
+      // Generate all characters
+      const allChars = strings.join('').split('');
 
-    // Find solutions
-    const validWords = generateWords(strings, trie);
-    const solutions = findOptionalSolutions(validWords, allChars);
-    setSolutions(solutions);
-    setIsLoading(false);
+      // Find solutions
+      const validWords = generateWords(strings, trie);
+      const solutions = findOptionalSolutions(validWords, allChars);
+      
+      // Add a small delay to ensure the loading state is visible
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setSolutions(solutions);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Fetch word list and construct trie
@@ -171,7 +178,7 @@ const Board: React.FC = () => {
                    hover:bg-blue-700 active:bg-blue-800
                    disabled:bg-gray-400 disabled:cursor-not-allowed
                    transition-colors duration-200
-                   flex items-center gap-2"
+                   flex items-center gap-2 min-w-[100px] justify-center"
         >
           {isLoading ? (
             <>
