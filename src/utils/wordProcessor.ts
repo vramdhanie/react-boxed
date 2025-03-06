@@ -25,17 +25,6 @@ export const constructTrie = (wordList: string[]): TrieNode => {
   return root;
 };
 
-const searchWord = (trie: TrieNode, word: string): boolean => {
-  let node = trie;
-  for (const char of word) {
-    if (!(char in node.children)) {
-      return false;
-    }
-    node = node.children[char];
-  }
-  return node.isEndOfWord;
-};
-
 const dfs = (
   trie: TrieNode,
   words: string[],
