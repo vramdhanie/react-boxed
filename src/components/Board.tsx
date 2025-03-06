@@ -26,6 +26,7 @@ const Board: React.FC = () => {
   const removeLetter = useStore((state) => state.removeLetter);
   const [solutions, setSolutions] = useState<[string, string][]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasAttemptedSolve, setHasAttemptedSolve] = useState(false);
 
   const getLetterForPosition = (position: number) => {
     return placedLetters.find((letter) => letter.position === position)?.key;
@@ -34,6 +35,7 @@ const Board: React.FC = () => {
   const handleSolve = async () => {
     if (!trie) return;
     setIsLoading(true);
+    setHasAttemptedSolve(true);
     
     // Get the four strings from the board
     const strings = [
@@ -168,23 +170,39 @@ const Board: React.FC = () => {
                    px-4 py-2 bg-blue-600 text-white rounded-lg
                    hover:bg-blue-700 active:bg-blue-800
                    disabled:bg-gray-400 disabled:cursor-not-allowed
-                   transition-colors duration-200"
+                   transition-colors duration-200
+                   flex items-center gap-2"
         >
-          {isLoading ? 'Solving...' : 'Solve'}
+          {isLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Solving...</span>
+            </>
+          ) : (
+            'Solve'
+          )}
         </button>
       </div>
 
       {/* Solutions display */}
-      {solutions.length > 0 && (
+      {hasAttemptedSolve && (
         <div className="mt-8 p-4 bg-white rounded-lg shadow-lg">
           <h3 className="text-lg font-semibold mb-4">Solutions:</h3>
-          <div className="space-y-2">
-            {solutions.map((solution, index) => (
-              <div key={index} className="text-gray-800">
-                {solution[0]} → {solution[1]}
-              </div>
-            ))}
-          </div>
+          {solutions.length > 0 ? (
+            <div className="space-y-2">
+              {solutions.map((solution, index) => (
+                <div key={index} className="text-gray-800">
+                  {solution[0]} → {solution[1]}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-600 text-center py-4">
+              No solutions found for the current arrangement.
+              <br />
+              Try rearranging the letters!
+            </div>
+          )}
         </div>
       )}
     </div>
