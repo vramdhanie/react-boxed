@@ -6,6 +6,45 @@ const ItemTypes = {
   LETTER: 'letter'
 };
 
+const createDragPreview = (letter: string) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;  // Slightly larger to accommodate shadow
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+
+  // Draw shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 4;
+
+  // Draw background
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.roundRect(8, 8, 48, 48, 8);
+  ctx.fill();
+
+  // Reset shadow for border
+  ctx.shadowColor = 'transparent';
+
+  // Draw border
+  ctx.strokeStyle = 'rgb(59, 130, 246)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(8, 8, 48, 48, 8);
+  ctx.stroke();
+
+  // Draw letter
+  ctx.fillStyle = 'rgb(59, 130, 246)';
+  ctx.font = 'bold 24px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(letter, 32, 32);
+
+  return canvas.toDataURL();
+};
+
 const Keyboard: React.FC = () => {
   const usedKeys = useStore((state) => state.usedKeys);
   
@@ -18,28 +57,16 @@ const Keyboard: React.FC = () => {
   const KeyButton: React.FC<{ letter: string }> = ({ letter }) => {
     const isUsed = usedKeys.includes(letter);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const previewUrl = useRef(createDragPreview(letter));
 
-    const [{ isDragging }, drag, preview] = useDrag({
+    const [{ isDragging }, drag, preview] = useDrag(() => ({
       type: ItemTypes.LETTER,
       item: { type: ItemTypes.LETTER, key: letter },
       collect: (monitor) => ({
         isDragging: monitor.isDragging()
       }),
-      canDrag: !isUsed,
-      options: {
-        dropEffect: 'move'
-      }
-    });
-
-    // Create a preview image for touch devices
-    const previewImg = new Image();
-    previewImg.src = `data:image/svg+xml;utf8,
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">
-        <rect width="48" height="48" rx="8" fill="rgb(59, 130, 246)" fillOpacity="0.1"/>
-        <text x="50%" y="50%" text-anchor="middle" dy=".3em" 
-              font-family="Arial" font-size="24" font-weight="bold" 
-              fill="rgb(59, 130, 246)">${letter}</text>
-      </svg>`;
+      canDrag: !isUsed
+    }), [letter, isUsed]);
 
     useEffect(() => {
       drag(buttonRef.current);
@@ -47,13 +74,13 @@ const Keyboard: React.FC = () => {
 
     return (
       <>
-        <DragPreviewImage connect={preview} src={previewImg.src} />
+        <DragPreviewImage connect={preview} src={previewUrl.current} />
         <button
           ref={buttonRef}
           className={`w-12 h-12 border-2 rounded-lg 
                      font-semibold text-lg shadow-sm
                      transition-colors duration-100
-                     touch-none
+                     touch-none select-none
                      ${isUsed 
                        ? 'bg-gray-200 border-gray-400 text-gray-400 cursor-not-allowed' 
                        : isDragging

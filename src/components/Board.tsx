@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
-import type { DropTargetMonitor } from 'react-dnd';
 import useStore from '../store/useStore';
 import { constructTrie, generateWords, findOptionalSolutions } from '../utils/wordProcessor';
 import { useQuery } from '@tanstack/react-query';
@@ -100,7 +99,7 @@ const Board: React.FC = () => {
     const isEmpty = !letter;
     const cellRef = useRef<HTMLDivElement>(null);
 
-    const [{ isOver, canDrop }, drop] = useDrop({
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
       accept: ItemTypes.LETTER,
       canDrop: () => !getLetterForPosition(position),
       drop: (item: DragItem) => {
@@ -110,11 +109,8 @@ const Board: React.FC = () => {
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop()
-      }),
-      options: {
-        dropEffect: 'move'
-      }
-    });
+      })
+    }), [position, getLetterForPosition, setLetter]);
 
     useEffect(() => {
       drop(cellRef.current);
@@ -127,9 +123,9 @@ const Board: React.FC = () => {
         className={`w-12 h-12 border-2 rounded-lg 
                    shadow-sm flex items-center justify-center
                    transition-all duration-200
-                   touch-none
+                   touch-none select-none
                    ${isEmpty && isOver && canDrop
-                     ? 'border-blue-400 bg-blue-50 scale-110 z-10' 
+                     ? 'border-blue-400 bg-blue-50 scale-110' 
                      : isEmpty && canDrop
                      ? 'border-gray-300 bg-gray-50 hover:border-blue-300 hover:bg-blue-50'
                      : 'border-gray-300 bg-white cursor-pointer hover:bg-gray-50 active:bg-gray-100'}`}

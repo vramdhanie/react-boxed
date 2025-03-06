@@ -11,30 +11,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Create a client
 const queryClient = new QueryClient();
 
-// Custom provider that uses TouchBackend on touch devices and HTML5Backend otherwise
-const CustomDndProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const backend = isTouchDevice ? TouchBackend : HTML5Backend;
-  const options = isTouchDevice ? {
-    enableMouseEvents: true,
-    enableTouchEvents: true,
-    delayTouchStart: 0,
-    touchSlop: 20,
-    ignoreContextMenu: true,
-    scrollAngleRanges: [{ start: 30, end: 330 }]
-  } : {};
-
-  return (
-    <DndProvider backend={backend} options={options}>
-      {children}
-    </DndProvider>
-  );
-};
-
 function App() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   return (
     <QueryClientProvider client={queryClient}>
-      <CustomDndProvider>
+      <DndProvider backend={isMobile ? TouchBackend : HTML5Backend} options={{
+        enableMouseEvents: true,
+        delayTouchStart: 50,
+        enableHoverOutsideTarget: true,
+        ignoreContextMenu: true,
+      }}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Header />
           <main className="flex-1 container mx-auto px-4 mt-[4.5rem] mb-[3.5rem]">
@@ -47,7 +34,7 @@ function App() {
           </main>
           <Footer />
         </div>
-      </CustomDndProvider>
+      </DndProvider>
     </QueryClientProvider>
   );
 }
