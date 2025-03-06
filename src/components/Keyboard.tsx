@@ -6,11 +6,6 @@ const ItemTypes = {
   LETTER: 'letter'
 };
 
-interface DragItem {
-  type: string;
-  key: string;
-}
-
 const Keyboard: React.FC = () => {
   const usedKeys = useStore((state) => state.usedKeys);
   
