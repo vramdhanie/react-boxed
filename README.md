@@ -49,6 +49,36 @@ Preview the production build:
 pnpm preview
 ```
 
+## Deployment
+
+This project is configured to automatically deploy to GitHub Pages when changes are pushed to the main branch. The deployment process is handled by GitHub Actions.
+
+### Manual Deployment
+
+1. Update the `base` property in `vite.config.ts` with your repository name:
+```ts
+export default defineConfig({
+  base: '/your-repo-name/',
+  // ... other config
+});
+```
+
+2. Push your changes to the main branch:
+```bash
+git push origin main
+```
+
+3. The GitHub Action will automatically build and deploy your site to GitHub Pages.
+
+4. Once deployed, your site will be available at `https://yourusername.github.io/your-repo-name/`
+
+### Setting up GitHub Pages
+
+1. Go to your repository settings
+2. Navigate to the "Pages" section
+3. Under "Build and deployment", select "GitHub Actions" as the source
+4. Your site will be deployed automatically when you push to the main branch
+
 ## License
 
 MIT License
