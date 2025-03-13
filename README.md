@@ -10,6 +10,11 @@
 
 A React-based word puzzle game where players arrange letters to find pairs of words that use all available characters.
 
+## 🎮 [Live Demo](https://boxed.vincentramdhanie.com/)
+
+Try the live demo at: https://boxed.vincentramdhanie.com/
+
+
 ## Features
 
 - Drag and drop interface for letter arrangement
