@@ -1,9 +1,9 @@
 # Boxed React Word Puzzle
 
-[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org/)
+[![Deploy](https://img.shields.io/github/actions/workflow/status/vramdhanie/react-boxed/deploy.yml?branch=main&label=deploy&logo=github)](https://github.com/vramdhanie/react-boxed/actions/workflows/deploy.yml)
+[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-4-646CFF?logo=vite)](https://vitejs.dev/)
 [![React DnD](https://img.shields.io/badge/React_DnD-16-1b262c)](https://react-dnd.github.io/react-dnd/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Author](https://img.shields.io/badge/Author-Vincent_Ramdhanie-orange)](https://vincentramdhanie.com)
